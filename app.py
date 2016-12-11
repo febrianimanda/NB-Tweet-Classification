@@ -19,5 +19,18 @@ def collectData(file):
 	f.close()
 	return data
 
+def cleaning(data):
+	data = [x.lower() for x in data]
+	data = [x.replace('. ',' ') for x in data]
+	data = [x.replace('; ',' ') for x in data]
+	data = [x.replace('? ',' ') for x in data]
+	data = [x.replace('! ',' ') for x in data]
+	data = [x.replace('; ',' ') for x in data]
+	data = [x.replace(', ',' ') for x in data]
+	return data
+
 mandrill = collectData('../tweet-dataset/Mandrill.csv')
+print mandrill
+print "\n========= cleaning ==========\n"
+mandrill = cleaning(mandrill)
 print mandrill
