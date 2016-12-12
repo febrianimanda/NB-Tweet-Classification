@@ -20,17 +20,33 @@ def collectData(file):
 	return data
 
 def cleaning(data):
-	data = [x.lower() for x in data]
-	data = [x.replace('. ',' ') for x in data]
-	data = [x.replace('; ',' ') for x in data]
-	data = [x.replace('? ',' ') for x in data]
-	data = [x.replace('! ',' ') for x in data]
-	data = [x.replace('; ',' ') for x in data]
-	data = [x.replace(', ',' ') for x in data]
+	data = [x.lower() for x in data] #lowering letter
+	#replace punctuation
+	data = [x.replace('. ',' ') for x in data] 
+	data = [x.replace(': ',' ') for x in data]
+	data = [x.replace('?',' ') for x in data]
+	data = [x.replace('!',' ') for x in data]
+	data = [x.replace(';',' ') for x in data]
+	data = [x.replace(',',' ') for x in data]
 	return data
+
+def tokenizations(data):
+	wordbag = []
+	for text in data:
+		words = text.split()
+		for word in words:
+			if(len(word)>3):
+				bag = {
+					'word': word,
+					'length': len(word)
+				}
+				wordbag.append(bag)
+	return wordbag
 
 mandrill = collectData('../tweet-dataset/Mandrill.csv')
 print mandrill
 print "\n========= cleaning ==========\n"
 mandrill = cleaning(mandrill)
 print mandrill
+objMandrill = tokenizations(mandrill)
+print objMandrill
