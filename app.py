@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-import csv, datetime, logging, time, math
+import csv, datetime, json, logging, time, math
 import logging.handlers
 
 client = MongoClient()
@@ -95,7 +95,7 @@ def getWordToObjTest(data):
 				'other': 0.00
 			}
 			wordbag.append(objWord)
-		o = {'id': ix, 'wordbag': wordbag}
+		o = {'id': ix, 'text': text,'wordbag': wordbag}
 		obj.append(o)
 	return obj
 
@@ -118,22 +118,31 @@ def testing(mandrill, other, test):
 		predict = "App" if totalApp > totalOther else "Other"
 		obj = {
 			'id': x['id'],
+			'tweet': unicode(x['text'], errors='replace'),
 			'predict': predict
 		}
 		prediction.append(obj)
-	print prediction
+	return prediction
+
+def writeToJson(file, data):
+	j = json.dumps(data, indent=2)
+	f = open(file, 'w')
+	print >> f,j
+	f.close()
 
 mandrill = collectData('../tweet-dataset/Mandrill.csv')
 other = collectData('../tweet-dataset/Other.csv')
 test = collectData('../tweet-dataset/Test.csv')
-print "\n========= cleaning ==========\n"
+# "\n========= cleaning ==========\n"
 mandrill = cleaning(mandrill)
 other = cleaning(other)
-print "\n========= Tokenizations ==========\n"
+# "\n========= Tokenizations ==========\n"
 objMandrill = tokenizations(mandrill)
 objOther = tokenizations(other)
-print "\n========= Model Building ==========\n"
+# "\n========= Model Building ==========\n"
 modelMandrill = modelBuilding(objMandrill)
 modelOther = modelBuilding(objOther)
 
-testing(modelMandrill, modelOther, test)
+prediction = testing(modelMandrill, modelOther, test)
+print prediction
+writeToJson('prediction.json', prediction)
