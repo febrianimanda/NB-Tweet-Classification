@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-import csv, json, datetime, logging, time
+import csv, datetime, logging, time, math
 import logging.handlers
 
 client = MongoClient()
@@ -45,20 +45,42 @@ def tokenizations(data):
 def getIndex(lst, key, val):
 	return next(index for (index, d) in enumerate(lst) if d[key] == val)
 
+def smoothing(obj):
+	for ix in range(len(obj)):
+		obj[ix]['total'] += 1
+	return obj
+
+def wordSelection(word, model):
+	if word not in [x['word'] for x in model]:
+		obj = {
+			'word': word,
+			'total': 1
+		}
+		model.append(obj)
+	else:
+		ix = getIndex(model,'word',word)
+		model[ix]['total'] += 1
+	return model
+
+def getProbability(countWord, totalWord):
+	return float(countWord) / float(totalWord)
+
+def addProbLog(model, totalWord):
+	for ix in range(len(model)):
+		prob = getProbability(model[ix]['total'], totalWord)
+		model[ix]['probability'] = prob
+		model[ix]['ln'] = math.log(prob)
+	return model
+
 def modelBuilding(wordbag):
 	model = []
 	for bag in wordbag:
 		if len(bag['word']) > 3:
-			if bag['word'] not in [x['word'] for x in model]:
-				obj = {
-					'word': bag['word'],
-					'total': 1
-				}
-				model.append(obj)
-			else:
-				ix = getIndex(model,'word',bag['word'])
-				model[ix]['total'] += 1
+			model = wordSelection(bag['word'], model)
+	model = smoothing(model)
+	model = addProbLog(model, len(wordbag))
 	return model
+
 mandrill = collectData('../tweet-dataset/Mandrill.csv')
 print mandrill
 print "\n========= cleaning ==========\n"
