@@ -35,18 +35,38 @@ def tokenizations(data):
 	for text in data:
 		words = text.split()
 		for word in words:
-			if(len(word)>3):
-				bag = {
-					'word': word,
-					'length': len(word)
-				}
-				wordbag.append(bag)
+			bag = {
+				'word': word,
+				'length': len(word)
+			}
+			wordbag.append(bag)
 	return wordbag
 
+def getIndex(lst, key, val):
+	return next(index for (index, d) in enumerate(lst) if d[key] == val)
+
+def modelBuilding(wordbag):
+	model = []
+	for bag in wordbag:
+		if len(bag['word']) > 3:
+			if bag['word'] not in [x['word'] for x in model]:
+				obj = {
+					'word': bag['word'],
+					'total': 1
+				}
+				model.append(obj)
+			else:
+				ix = getIndex(model,'word',bag['word'])
+				model[ix]['total'] += 1
+	return model
 mandrill = collectData('../tweet-dataset/Mandrill.csv')
 print mandrill
 print "\n========= cleaning ==========\n"
 mandrill = cleaning(mandrill)
 print mandrill
+print "\n========= Tokenizations ==========\n"
 objMandrill = tokenizations(mandrill)
 print objMandrill
+print "\n========= Model Building ==========\n"
+modelMandrill = modelBuilding(objMandrill)
+print modelMandrill
