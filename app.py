@@ -81,14 +81,59 @@ def modelBuilding(wordbag):
 	model = addProbLog(model, len(wordbag))
 	return model
 
+def getWordToObjTest(data):
+	obj = []
+	ix = 0
+	for text in data:
+		ix += 1
+		words = text.split()
+		wordbag = []
+		for word in words:
+			objWord = {
+				'word': word,
+				'app': 0.00,
+				'other': 0.00
+			}
+			wordbag.append(objWord)
+		o = {'id': ix, 'wordbag': wordbag}
+		obj.append(o)
+	return obj
+
+def testing(mandrill, other, test):
+	objTest = getWordToObjTest(test)
+	for ix in range(len(objTest)):
+		for jx in range(len(objTest[ix]['wordbag'])):
+			wordObj = objTest[ix]['wordbag'][jx]
+			word = wordObj['word']
+			for j in range(len(mandrill)):
+				if word == mandrill[j]['word']:
+					wordObj['app'] = mandrill[j]['ln']
+			for j in range(len(other)):
+				if word == other[j]['word']:
+					wordObj['other'] = other[j]['ln']
+	prediction = []
+	for x in objTest:
+		totalApp = sum([word['app'] for word in x['wordbag']])
+		totalOther = sum([word['other'] for word in x['wordbag']])
+		predict = "App" if totalApp > totalOther else "Other"
+		obj = {
+			'id': x['id'],
+			'predict': predict
+		}
+		prediction.append(obj)
+	print prediction
+
 mandrill = collectData('../tweet-dataset/Mandrill.csv')
-print mandrill
+other = collectData('../tweet-dataset/Other.csv')
+test = collectData('../tweet-dataset/Test.csv')
 print "\n========= cleaning ==========\n"
 mandrill = cleaning(mandrill)
-print mandrill
+other = cleaning(other)
 print "\n========= Tokenizations ==========\n"
 objMandrill = tokenizations(mandrill)
-print objMandrill
+objOther = tokenizations(other)
 print "\n========= Model Building ==========\n"
 modelMandrill = modelBuilding(objMandrill)
-print modelMandrill
+modelOther = modelBuilding(objOther)
+
+testing(modelMandrill, modelOther, test)
