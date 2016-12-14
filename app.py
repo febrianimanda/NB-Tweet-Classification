@@ -1,9 +1,5 @@
-from pymongo import MongoClient
 import csv, datetime, json, logging, time, math
 import logging.handlers
-
-client = MongoClient()
-db = client.tweets
 
 def collectData(file):
 	f = open(file, 'rU')
