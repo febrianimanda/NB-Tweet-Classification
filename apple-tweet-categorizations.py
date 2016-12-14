@@ -144,7 +144,7 @@ def testing(dataTrain, appleModel, noneModel):
 			truePredict += 1
 		print '%s diklasifikasikan ke %s dan hasil %s' % (data['tweet'], predict, predicting)
 	accuracy = float(truePredict) / float(len(dataTrain)) * 100
-	print 'Hasil akurasi = %f %' % accuracy	
+	print 'Hasil akurasi %d %%' % (int(accuracy))
 
 def training(data):
 	print '\n === Cleaning === \n'
