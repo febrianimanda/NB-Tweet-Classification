@@ -93,6 +93,27 @@ def twitterTokenizing(data):
 def getIndex(lst, key, val):
 	return next(index for (index, d) in enumerate(lst) if d[key] == val)
 
+def createTokenizingItem(word):
+	item = {
+		'word': word,
+		'length': len(word),
+		'total': 1
+	}
+	return item
+
+def tokenizingOnlyCorpus(data):
+	wordbags = []
+	for text in data:
+		words = text.split()
+		for word in words:
+			if word in apple_corpus:
+				if word not in[x['word'] for x in wordbags]:
+					wordbags.append(createTokenizingItem(word))
+				else:
+					ix = getIndex(wordbags, 'word', word)
+					wordbags[ix]['total'] += 1
+	return wordbags
+
 def tokenizing(data):
 	wordbags = []
 	for text in data:
@@ -100,15 +121,7 @@ def tokenizing(data):
 		for word in words:
 			if len(word) > 3:
 				if word not in [x['word'] for x in wordbags]:
-					# temp = checkAndGetUrl(word)
-					# if temp != "":
-					# 	word = temp
-					item = {
-						'word': word,
-						'length': len(word),
-						'total': 1
-					}
-					wordbags.append(item)
+					wordbags.append(createTokenizingItem(word))
 				else:
 					ix = getIndex(wordbags,'word',word)
 					wordbags[ix]['total'] += 1
@@ -193,7 +206,7 @@ def training(data):
 	print '\n === Lemmatization === \n'
 	data = lemmatizing(data)
 	print '\n === Tokenizations === \n'
-	data = tokenizing(data)
+	data = tokenizingOnlyCorpus(data)
 	print '\n === Build Model === \n'
 	model = builModel(data)
 	return model
@@ -229,4 +242,4 @@ noneModel = training(none_data)
 dataTrain = testPreprocessing(dataTrain)
 
 result = testing(dataTrain, appleModel, noneModel)
-saveToCsv(result, 'result.csv')
+saveToCsv(result, 'result-onlycorpus.csv')
