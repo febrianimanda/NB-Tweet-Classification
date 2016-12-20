@@ -1,9 +1,19 @@
 from nltk.stem.porter import *
 from nltk.stem import WordNetLemmatizer
+from xml.sax import saxutils as su
 from happyfuntokenizing import *
-import csv, json, math, nltk
+import csv, json, math, re, requests
 
 apple_corpus = ['apple', 'itunes', 'ipad', 'ipod', 'mac', 'ios', 'iphone', 'AAPL', 'cupertino', 'safari', 'ilife', 'iwork', 'garageband', 'ibook', 'powerbook', 'itouch', 'app', 'store', 'macworld', 'facetime', 'icloud', 'mobileme', 'siri', 'imovie', 'iphoto', 'quicktime', 'logic pro', 'think different']
+
+def saveToCsv(obj, fileName):
+	with open(fileName,'wb') as csvfile:
+		fieldnames = ['tweet', 'label', 'predict', 'result']
+		filewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+		filewriter.writeheader()
+		for data in obj:
+			filewriter.writerow(data)
+	print "Save as %s" % (fileName)
 
 def collectData(file):
 	f = open(file,'r')
@@ -48,6 +58,8 @@ def cleaning(data):
 	data = [x.replace('!',' ') for x in data]
 	data = [x.replace(';',' ') for x in data]
 	data = [x.replace(',',' ') for x in data]
+	#HTML Correction
+	data = [su.unescape(x) for x in data]
 	return data
 
 def stemming(data):
@@ -88,6 +100,9 @@ def tokenizing(data):
 		for word in words:
 			if len(word) > 3:
 				if word not in [x['word'] for x in wordbags]:
+					# temp = checkAndGetUrl(word)
+					# if temp != "":
+					# 	word = temp
 					item = {
 						'word': word,
 						'length': len(word),
@@ -129,22 +144,44 @@ def getProbFromModel(dataModel, word):
 			break
 	return prob
 
+def checkAndGetUrl(text):
+	word = ""
+	url = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', text)
+	if len(url) > 0:
+		r = requests.head(url[0].decode(), allow_redirects=True, verify=False)
+		print url[0], '|', r.status_code
+		if r.status_code != 404:
+			word = r.url
+	return word
+
 def testing(dataTrain, appleModel, noneModel):
 	truePredict = 0
+	obj = []
 	for data in dataTrain:
 		words = data['tweet'].split()
 		appleProb = 0
 		noneProb = 0
 		for word in words:
+			# temp = checkAndGetUrl(word)
+			# if temp != "":
+			# 	word = temp
 			appleProb += getProbFromModel(appleModel, word)
 			noneProb += getProbFromModel(noneModel, word)
 		predict = "apple" if appleProb > noneProb else "none"
 		predicting = True if predict == data['label'] else False
 		if predicting:
 			truePredict += 1
-		print '%s diklasifikasikan ke %s dan hasil %s' % (data['tweet'], predict, predicting)
+		print '%s diklasifikasikan ke %s | hasil %s' % (data['tweet'], predict, predicting)
+		items = {
+			'tweet': data['tweet'],
+			'label': data['label'],
+			'predict': predict,
+			'result': predicting
+		}
+		obj.append(items)
 	accuracy = float(truePredict) / float(len(dataTrain)) * 100
 	print 'Hasil akurasi %d %%' % (int(accuracy))
+	return obj
 
 def training(data):
 	print '\n === Cleaning === \n'
@@ -161,6 +198,26 @@ def training(data):
 	model = builModel(data)
 	return model
 
+def testPreprocessing(data):
+	print "Preprocessing Test"
+	lemmatizer = WordNetLemmatizer()
+	lemmatizedData = []
+	for item in data:
+		tweet = item['tweet']
+		tweet = tweet.lower()
+		tweet = tweet.replace('. ',' ')
+		tweet = tweet.replace(': ',' ')
+		tweet = tweet.replace('?',' ')
+		tweet = tweet.replace('!',' ')
+		tweet = tweet.replace(';',' ')
+		tweet = tweet.replace(',',' ')
+		words = tweet.split()
+		singles = [lemmatizer.lemmatize(unicode(word, errors='replace')) for word in words]
+		temp = u' '.join(word for word in singles).encode('utf-8').strip()
+		item['tweet'] = tweet
+	return data
+
+
 print '\n === Collecting === \n'
 data = collectData('filtered-training.txt')
 apple_data = data['apple']
@@ -169,5 +226,7 @@ dataTrain = collecTrainData('filtered-testing.txt')
 
 appleModel = training(apple_data)
 noneModel = training(none_data)
+dataTrain = testPreprocessing(dataTrain)
 
-testing(dataTrain, appleModel, noneModel)
+result = testing(dataTrain, appleModel, noneModel)
+saveToCsv(result, 'result.csv')
