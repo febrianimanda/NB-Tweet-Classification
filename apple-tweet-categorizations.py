@@ -106,12 +106,12 @@ def tokenizingOnlyCorpus(data):
 	for text in data:
 		words = text.split()
 		for word in words:
-			if word in apple_corpus:
-				if word not in[x['word'] for x in wordbags]:
-					wordbags.append(createTokenizingItem(word))
-				else:
-					ix = getIndex(wordbags, 'word', word)
-					wordbags[ix]['total'] += 1
+			#if word in apple_corpus:
+			if word not in[x['word'] for x in wordbags]:
+				wordbags.append(createTokenizingItem(word))
+			else:
+				ix = getIndex(wordbags, 'word', word)
+				wordbags[ix]['total'] += 1
 	return wordbags
 
 def tokenizing(data):
@@ -167,42 +167,9 @@ def checkAndGetUrl(text):
 			word = r.url
 	return word
 
-def testing(dataTrain, appleModel, noneModel):
-	truePredict = 0
-	obj = []
-	for data in dataTrain:
-		words = data['tweet'].split()
-		appleProb = 0
-		noneProb = 0
-		for word in words:
-			# temp = checkAndGetUrl(word)
-			# if temp != "":
-			# 	word = temp
-			appleProb += getProbFromModel(appleModel, word)
-			noneProb += getProbFromModel(noneModel, word)
-		predict = "apple" if appleProb > noneProb else "none"
-		predicting = True if predict == data['label'] else False
-		if predicting:
-			truePredict += 1
-		print '%s diklasifikasikan ke %s | hasil %s' % (data['tweet'], predict, predicting)
-		items = {
-			'tweet': data['tweet'],
-			'label': data['label'],
-			'predict': predict,
-			'result': predicting
-		}
-		obj.append(items)
-	accuracy = float(truePredict) / float(len(dataTrain)) * 100
-	print 'Hasil akurasi %d %%' % (int(accuracy))
-	return obj
-
 def training(data):
 	print '\n === Cleaning === \n'
 	data = cleaning(data)
-	# print '\n === stemming === \n'
-	# data = stemming(data)
-	# print '\n === Twitter Tokenizing === \n'
-	# data = twitterTokenizing(data)
 	print '\n === Lemmatization === \n'
 	data = lemmatizing(data)
 	print '\n === Tokenizations === \n'
@@ -230,6 +197,32 @@ def testPreprocessing(data):
 		item['tweet'] = tweet
 	return data
 
+
+def testing(dataTrain, appleModel, noneModel):
+	truePredict = 0
+	obj = []
+	for data in dataTrain:
+		words = data['tweet'].split()
+		appleProb = 0
+		noneProb = 0
+		for word in words:
+			appleProb += getProbFromModel(appleModel, word)
+			noneProb += getProbFromModel(noneModel, word)
+		predict = "apple" if appleProb > noneProb else "none"
+		predicting = True if predict == data['label'] else False
+		if predicting:
+			truePredict += 1
+		print '%s diklasifikasikan ke %s | hasil %s' % (data['tweet'], predict, predicting)
+		items = {
+			'tweet': data['tweet'],
+			'label': data['label'],
+			'predict': predict,
+			'result': predicting
+		}
+		obj.append(items)
+	accuracy = float(truePredict) / float(len(dataTrain)) * 100
+	print 'Hasil akurasi %d %%' % (int(accuracy))
+	return obj
 
 print '\n === Collecting === \n'
 data = collectData('filtered-training.txt')
